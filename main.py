@@ -8,10 +8,14 @@ password = getpass.getpass("Enter your password: ")
 for i in database.keys():
     for j in database.values():
         if username == i:
-            while password != database.get(i):
-                password = getpass.getpass("Please re-enter password: ")
-                break
-            print("Verified! Access Granted!")
+            if password != database.get(i):
+                password = getpass.getpass("Please enter the password again: ")
+                break 
+            print("Varified! Access granted")
+            # while password != database.get(i):
+            #     password = getpass.getpass("Please re-enter password: ")
+            #     break
+            # print("Verified! Access Granted!")
             # if password == j:
             #     print("Verified! Access granted")
             # else:
