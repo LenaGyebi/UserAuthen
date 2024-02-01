@@ -1,8 +1,10 @@
 import psycopg2
 from psycopg2 import Error
 from fastapi import FastAPI
-import database
 import getpass
+
+
+app = FastAPI()
 
 #Creating connection to the database
 try:
@@ -12,63 +14,69 @@ try:
                               port="5432",
                               database="userauthen")
 
-    cursor=connection.cursor()
-    print("PostgresSQL server information")
-    print(connection.get_dsn_parameters(), "\n")
-    cursor.execute("SELECT version()")
-    record = cursor.fetchone()
-    print("You are connected to -", record, "\n")
+    cursor = connection.cursor()
+    create_table_query = """CREATE TABLE IF NOT EXISTS users 
+    (
+    id INT PRIMARY KEY ,
+    lastname  varchar(255) NOT NULL,
+    firstname varchar(255) NOT NULL,
+    user_name varchar(255) NOT NULL,
+    email varchar(50) NOT NULL,
+    password varchar(50) NOT NULL);"""
 
+    cursor.execute(create_table_query)
+    connection.commit()
+    print("table successfully created")
+    
+    # print("PostgresSQL server information")
+    # print(connection.get_dsn_parameters(), "\n")
+    # cursor.execute("SELECT version()")
+    # record = cursor.fetchone()
+    # print("You are connected to -", record, "\n")
 
-    app = FastAPI()
-
-
-    user_name = input("Please enter your username: ")
-    email = input("enter your email: ")
-    password = getpass.getpass("Enter your password: ")
 
 except(Exception, Error) as Error:
-    print("Eroor while connecting to database", Error)
+    print("Error while connecting to database", Error)
 
 
+@app.get("/")
+def read_root():
+    return{"message:" "Welcome to register API"}
 
-
-#inserting the values into the database
+    #inserting the values into the database
+    # cursor = connection.cursor()
+@app.post("/register/")
+async def register_user(id: int, lastname: str, firstname: str, user_name: str, email: str, password:str):
+    insert_query = """INSERT INTO users(id, lastname, firstname, user_name,email, password) VALUES (%s, %s,%s, %s, %s,%s)"""
+    values = (id, lastname,firstname, user_name, email, password)
+    connection = psycopg2.connect(database="userauthen", user="postgres", password="admin", host="127.0.0.1", port="5432")
     cursor = connection.cursor()
-    insert_query = """INSERT INTO userauthen (id, user_name,email, password) VALUES (%s, %s, %s,%s)""", 
-    (id, user_name, email, getpass)
-    cursor.execute(insert_query)
-    connection.commit()
-    print("Values have been added to the table successfully")
+    
+    try:
+        cursor.execute(insert_query, values)
+        connection.commit()
+        return {"message": "Registration successful"}
 
-    cursor.execute("SELECT * from userauthen")
-    record = cursor.fetchall()
-    print("Result: ", record)
+        
 
+        # return {"message": "Registration successful"}
+    
+    except psycopg2.Error as e:
+        return{"Error:", e}
 
-
-finally:
-    if (connection):
+    finally:
         cursor.close()
         connection.close()
-        print("Database has been closed")
-                                                                                              
-# for i in database():
-#         if username == i:
-#             if password != database.get(i):
-#                 password = getpass.getpass("Please enter the password again: ")
-#                 break 
-#             print("Varified! Access granted")
-#             while password != database.get(i):
-#                 password = getpass.getpass("Please re-enter password: ")
-#                 break
-#             print("Verified! Access Granted!")
-#             if password == j:
-#                 print("Verified! Access granted")
-#             else:
-#                 print("Access Denied")
 
 
-# @app.get("/root")
-# async def root():
-#     return("this is first data")
+@app.get("/testing_api/")
+def read_users():
+    cursor.execute("SELECT * from users")
+    record = cursor.fetchall()
+    return{"Result": record}
+
+
+
+
+        
+    
